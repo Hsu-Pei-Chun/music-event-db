@@ -36,3 +36,5 @@ docker-compose.override.yml
 .vscode/
 *.swp
 *.swo
+
+db.sqlite3
