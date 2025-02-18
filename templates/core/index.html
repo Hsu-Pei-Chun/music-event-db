@@ -3,184 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登入 & 註冊</title>
+    <title>首頁</title>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-
-<div x-data="auth" class="w-full max-w-md p-8 bg-white shadow-lg rounded-lg">
-    <!-- 只有未登入時才顯示頁籤 -->
-    <div x-show="!isLoggedIn">
-        <div class="flex justify-center space-x-4 mb-6">
-            <button @click="tab = 'login'"
-                    :class="tab === 'login' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'"
-                    class="text-lg font-medium pb-2">
-                登入
-            </button>
-            <button @click="tab = 'register'"
-                    :class="tab === 'register' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'"
-                    class="text-lg font-medium pb-2">
-                註冊
-            </button>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-white shadow-md p-4 flex justify-end">
+        <div x-data="auth">
+            <template x-if="!isLoggedIn">
+                <div>
+                    <a href="{% url 'login' %}" class="text-blue-500 px-4 py-2">登入</a>
+                    <a href="{% url 'register' %}" class="text-blue-500 px-4 py-2">註冊</a>
+                </div>
+            </template>
+            <template x-if="isLoggedIn">
+                <div>
+                    <span class="text-gray-700 mr-4">歡迎，<span x-text="username"></span>！</span>
+                    <button @click="logout()" class="text-red-500 px-4 py-2">
+                        登出
+                    </button>
+                </div>
+            </template>
         </div>
+    </header>
 
-        <!-- 註冊表單 -->
-        <div x-show="tab === 'register'" class="space-y-4">
-            <h2 class="text-xl font-semibold text-center">註冊</h2>
-            <div>
-                <label class="block text-gray-600">使用者名稱：</label>
-                <input type="text" x-model="registerUsername" placeholder="請輸入使用者名稱"
-                       class="w-full p-2 border rounded">
-            </div>
-            <div>
-                <label class="block text-gray-600">Email：</label>
-                <input type="email" x-model="registerEmail" placeholder="請輸入電子郵件"
-                       class="w-full p-2 border rounded">
-            </div>
-            <div>
-                <label class="block text-gray-600">密碼：</label>
-                <input type="password" x-model="registerPassword" placeholder="請輸入密碼"
-                       class="w-full p-2 border rounded">
-            </div>
-            <div>
-                <label class="block text-gray-600">密碼確認：</label>
-                <input type="password" x-model="registerPassword2" placeholder="請再次輸入密碼"
-                       class="w-full p-2 border rounded">
-            </div>
-            <button @click="register()"
-                    class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-                註冊會員
-            </button>
-        </div>
+    <main class="flex items-center justify-center min-h-screen">
+        <h1 class="text-3xl font-semibold">歡迎來到首頁</h1>
+    </main>
 
-        <!-- 登入表單 -->
-        <div x-show="tab === 'login'" class="space-y-4">
-            <h2 class="text-xl font-semibold text-center">登入</h2>
-            <div>
-                <label class="block text-gray-600">使用者名稱：</label>
-                <input type="text" x-model="loginUsername" placeholder="請輸入使用者名稱"
-                       class="w-full p-2 border rounded">
-            </div>
-            <div>
-                <label class="block text-gray-600">密碼：</label>
-                <input type="password" x-model="loginPassword" placeholder="請輸入密碼"
-                       class="w-full p-2 border rounded">
-            </div>
-            <button @click="login()"
-                    class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-                登入
-            </button>
-        </div>
-    </div>
-
-    <!-- 只顯示登出選項 -->
-    <div x-show="isLoggedIn" class="text-center space-y-4">
-        <p class="text-lg font-semibold text-green-600">歡迎回來，<span x-text="username"></span>！</p>
-        <button @click="logout()"
-                class="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600">
-            登出
-        </button>
-    </div>
-</div>
-
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('auth', () => ({
-        API_BASE_URL: "http://127.0.0.1:8000/api/users",
-        isLoggedIn: false,
-        username: "",
-        tab: "login",  // 預設顯示登入頁籤
-        registerUsername: "",
-        registerEmail: "",
-        registerPassword: "",
-        registerPassword2: "",
-        loginUsername: "",
-        loginPassword: "",
-
-        init() {
-            const token = localStorage.getItem("token");
-            if (token) {
-                this.isLoggedIn = true;
-                this.username = localStorage.getItem("username") || "使用者";
-            }
-        },
-
-        async register() {
-            if (this.registerPassword.length < 8) {
-                alert("密碼需至少 8 個字元！");
-                return;
-            }
-            if (this.registerPassword !== this.registerPassword2) {
-                alert("密碼與確認密碼不相符！");
-                return;
-            }
-
-            const response = await fetch(`${this.API_BASE_URL}/register/`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: this.registerUsername,
-                    email: this.registerEmail,
-                    password: this.registerPassword,
-                    password2: this.registerPassword2
-                }),
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                alert("註冊成功，請登入！");
-                this.tab = "login";  // 註冊成功後自動切換到登入頁籤
-            } else {
-                alert(`註冊失敗: ${data.error}`);
-            }
-        },
-
-        async login() {
-            const response = await fetch(`${this.API_BASE_URL}/login/`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: this.loginUsername,
-                    password: this.loginPassword
-                }),
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("username", this.loginUsername);
-                this.username = this.loginUsername;
-                this.isLoggedIn = true;
-                alert("登入成功！");
-            } else {
-                alert(`登入失敗: ${data.error}`);
-            }
-        },
-
-        async logout() {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${this.API_BASE_URL}/logout/`, {
-                method: "POST",
-                headers: { 
-                    "Content-Type": "application/json",
-                    "Authorization": `Token ${token}`
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('auth', () => ({
+                isLoggedIn: false,
+                username: "",
+                init() {
+                    const token = localStorage.getItem("token");
+                    if (token) {
+                        this.isLoggedIn = true;
+                        this.username = localStorage.getItem("username") || "使用者";
+                    }
                 },
-            });
-
-            if (response.ok) {
-                localStorage.removeItem("token");
-                localStorage.removeItem("username");
-                this.isLoggedIn = false;
-                this.username = "";
-                alert("登出成功！");
-            } else {
-                alert("登出失敗");
-            }
-        }
-    }));
-});
-</script>
-
+                logout() {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("username");
+                    this.isLoggedIn = false;
+                    window.location.href = "{% url 'home' %}";  // 登出後跳回首頁
+                }
+            }));
+        });
+    </script>
 </body>
 </html>

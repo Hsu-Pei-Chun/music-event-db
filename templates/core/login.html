@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入</title>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div x-data="auth" class="w-full max-w-md p-10 bg-white shadow-lg rounded-lg">
+        <h2 class="text-2xl font-semibold text-center mb-6">登入</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-gray-600 mb-1">使用者名稱：</label>
+                <input type="text" x-model="loginUsername" placeholder="請輸入使用者名稱"
+                       class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div>
+                <label class="block text-gray-600 mb-1">密碼：</label>
+                <input type="password" x-model="loginPassword" placeholder="請輸入密碼"
+                       class="w-full p-3 border rounded focus:ring-2 focus:ring-blue-400">
+            </div>
+            <button @click="login()" class="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600 transition">
+                登入
+            </button>
+        </div>
+        <p class="text-center mt-6 text-gray-600">
+            還沒有帳號？<a href="{% url 'register' %}" class="text-blue-500 font-semibold hover:underline">立即註冊</a>
+        </p>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('auth', () => ({
+                loginUsername: "",
+                loginPassword: "",
+                async login() {
+                    const response = await fetch("{% url 'users_api:login' %}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            username: this.loginUsername,
+                            password: this.loginPassword
+                        }),
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        localStorage.setItem("token", data.token);
+                        localStorage.setItem("username", this.loginUsername);
+                        alert("登入成功！");
+                        window.location.href = "{% url 'home' %}";
+                    } else {
+                        alert(`登入失敗: ${data.error}`);
+                    }
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
