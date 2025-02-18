@@ -7,33 +7,82 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 h-screen overflow-hidden">
     <header class="bg-white shadow-md p-4 flex justify-end">
-        <div x-data="auth">
-            <template x-if="!isLoggedIn">
+        <div x-data>
+            <template x-if="!$store.auth.isLoggedIn">
                 <div>
                     <a href="{% url 'login' %}" class="text-blue-500 px-4 py-2">登入</a>
                     <a href="{% url 'register' %}" class="text-blue-500 px-4 py-2">註冊</a>
                 </div>
             </template>
-            <template x-if="isLoggedIn">
+            <template x-if="$store.auth.isLoggedIn">
                 <div>
-                    <span class="text-gray-700 mr-4">歡迎，<span x-text="username"></span>！</span>
-                    <button @click="logout()" class="text-red-500 px-4 py-2">
-                        登出
-                    </button>
+                    <span class="text-gray-700 mr-4">歡迎，<span x-text="$store.auth.username"></span>！</span>
+                    <button @click="$store.auth.logout()" class="text-red-500 px-4 py-2">登出</button>
                 </div>
             </template>
         </div>
     </header>
 
-    <main class="flex items-center justify-center min-h-screen">
-        <h1 class="text-3xl font-semibold">歡迎來到首頁</h1>
+    <main class="w-full max-w-2xl mx-auto flex flex-col items-center justify-center min-h-screen px-4" x-data="searchApp">
+        <h1 class="text-4xl font-bold mb-6 text-gray-800">搜尋活動</h1>
+    
+        <!-- 搜尋框 -->
+        <div class="relative w-full">
+            <input type="text" x-model="searchTitle"
+                class="w-full border border-gray-300 rounded-full py-3 px-5 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="輸入活動名稱...">
+            <button @click="search()"
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-2 font-semibold shadow-md transition">
+                搜尋
+            </button>
+        </div>
+    
+        <!-- 搜尋結果 -->
+        <div x-show="results.length > 0" class="w-full mt-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">搜尋結果：</h2>
+    
+            <div class="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+                <p class="text-xl font-bold text-gray-900 mb-4">
+                    <strong>標題：</strong> <span x-text="results[0]?.title || '無標題'"></span>
+                </p>
+    
+                <template x-if="results[0]?.showInfo?.length > 0">
+                    <div class="grid gap-3 text-gray-700">
+                        <p class="flex items-center"><strong class="w-24">場地名稱：</strong> <span x-text="results[0].showInfo[0].locationName"></span></p>
+                        <p class="flex items-center"><strong class="w-24">活動地址：</strong> <span x-text="results[0].showInfo[0].location"></span></p>
+                        <p class="flex items-center"><strong class="w-24">演出時間：</strong> <span x-text="results[0].showInfo[0].time"></span></p>
+                        <p class="flex items-center"><strong class="w-24">結束時間：</strong> <span x-text="results[0].showInfo[0].endTime"></span></p>
+                    </div>
+                </template>
+    
+                <!-- 管理按鈕 -->
+                <template x-if="$store.auth.isLoggedIn">
+                    <div class="mt-6 flex space-x-4">
+                        <button @click="editEvent(results[0])"
+                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-lg shadow-md transition">
+                            編輯
+                        </button>
+                        <button @click="deleteEvent(results[0])"
+                            class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg shadow-md transition">
+                            刪除
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <!-- 當沒有結果時，顯示「查無結果」 -->
+        <div x-show="noResults" class="w-full mt-8 text-center bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-lg font-semibold text-gray-600">查無結果</h2>
+            <p class="text-gray-500">請嘗試搜尋其他關鍵字。</p>
+        </div>
     </main>
+    
 
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('auth', () => ({
+            Alpine.store('auth', {
                 isLoggedIn: false,
                 username: "",
                 init() {
@@ -47,10 +96,71 @@
                     localStorage.removeItem("token");
                     localStorage.removeItem("username");
                     this.isLoggedIn = false;
-                    window.location.href = "{% url 'home' %}";  // 登出後跳回首頁
+                    window.location.reload();
+                }
+            });
+
+            Alpine.store("auth").init();
+
+            Alpine.data('searchApp', () => ({
+                searchTitle: "",
+                results: [],
+                search() {
+                    fetch(`/api/events/operation/?title=${this.searchTitle}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                this.results = [data.data]
+                                this.noResults = false;
+                            } else {
+                                this.results = [];
+                                this.noResults = true;
+                            }
+                        })
+                        .catch(error => {
+                            console.error("搜尋失敗：", error);
+                            this.results = [];
+                            this.noResults = true;
+                        });
+                },
+                editEvent(event) {
+                    const newTitle = prompt("修改標題：", event.title);
+                    if (newTitle) {
+                        fetch(`/api/events/operation/`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ title: event.title, new_title: newTitle })
+                        }).then(() => this.search());
+                    }
+                },
+                deleteEvent(event) {
+                    if (confirm("確定要刪除嗎？")) {
+                        fetch(`/api/events/operation/`, {
+                            method: "DELETE",
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "Authorization": `Token ${localStorage.getItem("token")}`
+                            },
+                            body: JSON.stringify({ UID: event.UID })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert("刪除成功！");
+                                window.location.reload();
+                            } else {
+                                alert("刪除失敗！");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("刪除失敗：", error);
+                            alert("刪除時發生錯誤，請稍後再試");
+                        });
+                    }
                 }
             }));
         });
     </script>
 </body>
 </html>
+

@@ -19,18 +19,20 @@ class OperationView(APIView):
         """資料查詢 API，透過 title 查詢"""
         title = request.query_params.get("title")
         if title:
-            event = Event.objects.filter(title__icontains=title).first()
+            event = Event.objects.prefetch_related("show_info__location").filter(title__icontains=title).first()
+            if not event:
+                return Response({"success": False, "message": "找不到活動"}, status=404)
             serializer = EventSerializer(event)
             return Response({"success": True, "data": serializer.data})
         
-        events = Event.objects.all()
+        events = Event.objects.all().prefetch_related("show_info__location")
         serializer = EventSerializer(events, many=True)
         return Response({"success": True, "data": serializer.data})
 
     def put(self, request, *args, **kwargs):
         """資料修改 API，允許部分更新"""
-        title = request.data.get("title")
-        event = Event.objects.filter(title__icontains=title).first()  # 透過 title 找到活動
+        uid = request.data.get("UID")  # 用 UID 來查找資料
+        event = get_object_or_404(Event.objects.prefetch_related("show_info__location"), UID=uid)
         serializer = EventSerializer(event, data=request.data, partial=True)  # `partial=True` 允許部分更新
         if serializer.is_valid():
             serializer.save()
@@ -38,8 +40,8 @@ class OperationView(APIView):
         return Response({"success": False, "error": serializer.errors}, status=400)
 
     def delete(self, request, *args, **kwargs):
-        """資料刪除 API，透過 title 刪除"""
-        title = request.data.get("title")
-        event = Event.objects.filter(title__icontains=title).first()
+        """資料刪除 API，透過 UID 刪除"""
+        uid = request.data.get("UID")  # 用 UID 來確保刪除的是正確的資料
+        event = get_object_or_404(Event.objects.prefetch_related("show_info__location"), UID=uid)
         event.delete()
         return Response({"success": True, "message": "資料刪除成功"})
