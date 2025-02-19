@@ -33,8 +33,14 @@
             <input type="text" x-model="searchTitle"
                 class="w-full border border-gray-300 rounded-full py-3 px-5 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 placeholder="輸入活動名稱...">
-            <button @click="search()"
-                class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-2 font-semibold shadow-md transition">
+            <button 
+                @click="search()"
+                :disabled="searchTitle.trim() === ''"
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 
+                    px-6 py-2 font-semibold shadow-md transition rounded-full
+                    text-white bg-blue-600 hover:bg-blue-700
+                    disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
                 搜尋
             </button>
         </div>
@@ -105,6 +111,7 @@
             Alpine.data('searchApp', () => ({
                 searchTitle: "",
                 results: [],
+                noResults: false,
                 search() {
                     fetch(`/api/events/operation/?title=${this.searchTitle}`)
                         .then(res => res.json())
@@ -128,9 +135,25 @@
                     if (newTitle) {
                         fetch(`/api/events/operation/`, {
                             method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ title: event.title, new_title: newTitle })
-                        }).then(() => this.search());
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "Authorization": `Token ${localStorage.getItem("token")}` 
+                            },
+                            body: JSON.stringify({ UID: event.UID, title: newTitle })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert("更新成功！");
+                                event.title = newTitle;
+                            } else {
+                                alert("更新失敗：" + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error("更新失敗：", error);
+                            alert("更新時發生錯誤，請稍後再試");
+                        });
                     }
                 },
                 deleteEvent(event) {
