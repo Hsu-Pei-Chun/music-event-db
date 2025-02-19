@@ -1,12 +1,24 @@
 services:
   web:
     build: .
+    environment:
+      - TZ=Asia/Taipei    
     ports:
       - "8000:8000"
     volumes:
       - .:/app
     depends_on:
       - mongodb
+
+  scraper:
+    build: .
+    environment:
+      - TZ=Asia/Taipei
+    depends_on:
+      - mongodb
+    working_dir: /app
+    command: ["python3", "/app/music_events/scripts/scraper.py"]
+    restart: always
 
   mongodb:
     image: mongo:latest
