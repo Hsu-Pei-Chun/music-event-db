@@ -6,7 +6,8 @@ ENV TZ=Asia/Taipei
 RUN apt update && apt install -y tzdata
 
 # 安裝 Python 和必要套件
-RUN apt install -y python3 python3-pip python3-venv
+RUN apt update && apt install -y python3 python3-pip python3-venv
+
 
 # 設定工作目錄
 WORKDIR /app
