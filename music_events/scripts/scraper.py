@@ -42,6 +42,10 @@ def fetch_and_save_data():
 
 def log_to_mongodb(status, data_count):
     """ 將爬取紀錄存入 MongoDB """
+    
+    print("🔍 正在連接 MongoDB...")
+    print(f"MongoDB 連線字串: {MONGO_URI}")
+
     client = pymongo.MongoClient(MONGO_URI)
     db = client[DB_NAME]
     collection = db[COLLECTION_NAME]
@@ -65,7 +69,7 @@ def start_scheduler():
     """ 啟動爬蟲排程 """
     print("✅ [DEBUG] start_scheduler() 被呼叫")
     scheduler = BackgroundScheduler()
-    scheduler.add_job(job, "cron", hour=1, minute=16, timezone="Asia/Taipei")  # 每天 01:00 執行
+    scheduler.add_job(job, "cron", hour=1, minute=0, timezone="Asia/Taipei")  # 每天 01:00 執行
     scheduler.start()
     print("✅ 爬蟲排程已啟動，每日 01:00 執行")
 
