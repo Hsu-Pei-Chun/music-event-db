@@ -3,9 +3,7 @@ services:
     build: .
     network_mode: "host"
     environment:
-      - TZ=Asia/Taipei    
-    ports:
-      - "8000:8000"
+      - TZ=Asia/Taipei
     volumes:
       - .:/app
     depends_on:
