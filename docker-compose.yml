@@ -1,6 +1,7 @@
 services:
   web:
     build: .
+    network_mode: "host"
     environment:
       - TZ=Asia/Taipei    
     ports:
