@@ -13,7 +13,7 @@ SECRET_KEY = 'django-insecure-c7i4z8(4d3=_%99k--+krg5+i(7%sbo_bh7z_+y&fd0%%!m%lj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*", "34.80.16.234", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -122,3 +122,6 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
