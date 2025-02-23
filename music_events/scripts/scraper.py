@@ -7,6 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import time
 import django
 import sys
+import subprocess
 
 sys.path.append("/app")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
@@ -63,6 +64,14 @@ def job():
     """ 定時執行的爬取作業 """
     print("✅ [DEBUG] 爬蟲 job() 執行中...")
     success, count = fetch_and_save_data()
+
+    if success:
+        print("✅ [DEBUG] 爬取成功，開始執行資料匯入...")
+        result = subprocess.run(["python3", "manage.py", "import_json"], capture_output=True, text=True)
+        print(result.stdout)
+        if result.stderr:
+            print(f"❌ [ERROR] import_json.py 執行錯誤: {result.stderr}")    
+
     log_to_mongodb(success, count)
 
 def start_scheduler():

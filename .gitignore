@@ -39,3 +39,16 @@ docker-compose.override.yml
 
 db.sqlite3
 *.tar.gz
+
+# 忽略 Unix/Linux/Mac 個人 shell 設定檔案
+.bash_history
+.bash_logout
+.bashrc
+.profile
+.lesshst
+
+# 忽略 SSH 機密金鑰與授權文件
+.ssh/
+
+# 忽略 Google Cloud 設定檔案
+.config/gcloud/
