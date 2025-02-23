@@ -7,7 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import time
 import django
 import sys
-import subprocess
+from django.core.management import call_command
 
 sys.path.append("/app")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
@@ -67,10 +67,10 @@ def job():
 
     if success:
         print("✅ [DEBUG] 爬取成功，開始執行資料匯入...")
-        result = subprocess.run(["python3", "manage.py", "import_json"], capture_output=True, text=True)
-        print(result.stdout)
-        if result.stderr:
-            print(f"❌ [ERROR] import_json.py 執行錯誤: {result.stderr}")    
+        try:
+            call_command('import_json')
+        except Exception as e:
+            print(f"❌ [ERROR] import_json 執行錯誤: {str(e)}")  
 
     log_to_mongodb(success, count)
 
